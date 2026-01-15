@@ -1,0 +1,37 @@
+name: Construir iPhone IOS
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build_ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4  # <--- IMPORTANTE: v4
+      
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Crear Iconos (Por si acaso)
+        run: dart run flutter_launcher_icons
+
+      - name: Compilar App (Sin firmar)
+        run: flutter build ios --release --no-codesign
+
+      - name: Convertir a IPA (Manual)
+        run: |
+          mkdir Payload
+          mv build/ios/iphoneos/Runner.app Payload
+          zip -r app_iphone.ipa Payload
+
+      - name: Subir el archivo para descargar
+        uses: actions/upload-artifact@v4  # <--- IMPORTANTE: v4 (Esto arregla el error)
+        with:
+          name: instalador-iphone
+          path: app_iphone.ipa
